@@ -26,13 +26,13 @@ with sync_playwright() as p:
 
     # 블로그 URL 리스트 가져오기
     result = get_blog_ids_and_posts("오징어")
-    print(result)
     # 각 블로그 URL에 대해 작업 수행
     for url in result:
         try:  
             print(f"현재 처리 중인 URL: {url}")
         
             # 블로그로 이동
+            time.sleep(1)
             page.goto(url)
         
             # 이웃 추가 버튼 클릭 (새 탭이 열릴 가능성 있음)
@@ -41,22 +41,20 @@ with sync_playwright() as p:
         
             # 새로 열린 팝업 탭을 다루기
             popup = popup_info.value
-            popup.wait_for_selector("#each_buddy_add")  # 새 탭에서 요소가 나타날 때까지 대기
-
+            popup.wait_for_selector("#each_buddy_add", timeout=1000)  # 새 탭에서 요소가 나타날 때까지 대기
+            
             # label을 클릭
             buddy_add_label = popup.locator('label[for="each_buddy_add"]')
             if not buddy_add_label.is_enabled():
                 popup.close()  # 팝업 닫기
-                time.sleep(2)
+                time.sleep(1)
                 print(f"비활성화된 '서로이웃 추가' 버튼을 건너뜁니다: {url}")
                 continue  # 비활성화된 버튼이 있으면 해당 URL 건너뛰기
             
             popup.click('label[for="each_buddy_add"]')
-            time.sleep(1)
 
             # next 다음 클릭
             popup.click('a.button_next')
-            time.sleep(1)
 
             # 이름 가져오기
             name_buddy = popup.locator('.text_buddy_add strong.name_buddy').text_content()
@@ -64,15 +62,14 @@ with sync_playwright() as p:
 
             # 메시지 입력
             popup.locator('#message').fill(f"안녕하세요! {name_buddy}님 서로이웃 신청 드립니다. 잘 부탁드려요 😊")
-            time.sleep(1)
 
             # 최종 버튼 클릭
             popup.click('a.button_next')
-            time.sleep(2)
             popup.close()  # 팝업 닫기
 
         except Exception as e:
             print(f"오류 발생: {e}, URL: {url}")
+            popup.close()
             continue
 
     # 브라우저 종료
